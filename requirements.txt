@@ -1,0 +1,4 @@
+requests
+youtube_dl
+flask
+python-telegram-bot
