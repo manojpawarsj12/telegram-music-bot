@@ -118,7 +118,7 @@ if __name__ == "__main__":
     t1 = Thread(target=start_flask)
     t1.start()
 
-    key = "656931474:AAEE5o4DIf4tkTm4EF32UsKRhZFGn7_qWV8"
+    key = "add your api key here"
     updater = Updater(key, use_context=True)
     dp = updater.dispatcher
     conv_handler = ConversationHandler(
