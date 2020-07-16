@@ -12,29 +12,33 @@ GET_DOWNLOADMUSIC1, GET_DOWNLOADMUSIC2, GET_DOWNLOADMUSIC3 = range(3)
 song_url = str()
 song_name = str()
 app = Flask(__name__)
-@app.route('/')
+
+
+@app.route("/")
 def hello():
     return "sedlyf"
 
 
 def start_flask():
     port = int(environ.get("PORT", 5000))
-    app.run(threaded=True, host='0.0.0.0', port=port)
+    app.run(threaded=True, host="0.0.0.0", port=port)
 
 
 def yt_url(url):
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '320',
-        }],
+        "format": "bestaudio/best",
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "320",
+            }
+        ],
     }
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
 
-        result = (ydl.extract_info(url, download=False))
+        result = ydl.extract_info(url, download=False)
     return result.get("url")
 
 
@@ -55,19 +59,20 @@ def downloadmusic(update, context):
         search_results = YoutubeSearch(str(song_name), max_results=5).to_dict()
 
         for i in search_results:
-            title[i["title"]] = "https://youtube.com"+i["url_suffix"]
+            title[i["title"]] = "https://youtube.com" + i["url_suffix"]
             names.append(i["title"])
 
         keyboard = [
-            [InlineKeyboardButton(names[0], callback_data='0')],
-            [InlineKeyboardButton(names[1], callback_data='1')],
-            [InlineKeyboardButton(names[2], callback_data='2')],
-            [InlineKeyboardButton(names[3], callback_data='3')],
-            [InlineKeyboardButton(names[4], callback_data='4')]]
+            [InlineKeyboardButton(names[0], callback_data="0")],
+            [InlineKeyboardButton(names[1], callback_data="1")],
+            [InlineKeyboardButton(names[2], callback_data="2")],
+            [InlineKeyboardButton(names[3], callback_data="3")],
+            [InlineKeyboardButton(names[4], callback_data="4")],
+        ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        update.message.reply_text('Please choose:', reply_markup=reply_markup)
+        update.message.reply_text("Please choose:", reply_markup=reply_markup)
 
         return GET_DOWNLOADMUSIC2
     except:
@@ -91,7 +96,10 @@ def button(update, context):
     song_url = yt_url(str(url))
 
     query.edit_message_text(
-        text="Selected title : {}\n reply 'confirm'   to confirm".format(onk[int(choice)]))
+        text="Selected title : {}\n reply 'confirm'   to confirm".format(
+            onk[int(choice)]
+        )
+    )
     return GET_DOWNLOADMUSIC3
 
 
@@ -106,7 +114,7 @@ def error(update, error):
     return ConversationHandler.END
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     t1 = Thread(target=start_flask)
     t1.start()
 
@@ -114,20 +122,13 @@ if __name__ == '__main__':
     updater = Updater(key, use_context=True)
     dp = updater.dispatcher
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
-
+        entry_points=[CommandHandler("start", start)],
         states={
-            GET_DOWNLOADMUSIC1: [MessageHandler(
-                Filters.text, downloadmusic)],
-            GET_DOWNLOADMUSIC2: [CallbackQueryHandler(button)
-                                 ],
-            GET_DOWNLOADMUSIC3: [MessageHandler
-                                 (Filters.text, display_results)],
+            GET_DOWNLOADMUSIC1: [MessageHandler(Filters.text, downloadmusic)],
+            GET_DOWNLOADMUSIC2: [CallbackQueryHandler(button)],
+            GET_DOWNLOADMUSIC3: [MessageHandler(Filters.text, display_results)],
         },
-        fallbacks=[MessageHandler(Filters.text,
-                                  error,
-                                  pass_user_data=True),
-                   ]
+        fallbacks=[MessageHandler(Filters.text, error, pass_user_data=True),],
     )
     dp.add_handler(conv_handler)
     updater.start_polling()
