@@ -3,15 +3,29 @@ from telegram.ext import *
 import logging
 import youtube_dl
 from yout import YoutubeSearch
-from flask import Flask
+from flask import Flask, Response
 from os import environ
 from threading import Thread
+import requests
+from uuid import uuid4
 
 GET_DOWNLOADMUSIC1, GET_DOWNLOADMUSIC2, GET_DOWNLOADMUSIC3 = range(3)
 
 song_url = str()
 song_name = str()
 app = Flask(__name__)
+
+
+ctx = app.test_request_context()
+ctx.push()
+
+
+def flask_streaming():
+
+    r = requests.get(url, stream=True)
+    return Response(
+        r.iter_content(chunk_size=10 * 1024), content_type=r.headers["Content-Type"]
+    )
 
 
 @app.route("/")
@@ -68,6 +82,7 @@ def downloadmusic(update, context):
             [InlineKeyboardButton(names[2], callback_data="2")],
             [InlineKeyboardButton(names[3], callback_data="3")],
             [InlineKeyboardButton(names[4], callback_data="4")],
+            [InlineKeyboardButton("Cancel", callback_data="5")],
         ]
 
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -90,10 +105,20 @@ def button(update, context):
     for i in title:
         onk.append(i)
     choice = query.data
-    url = title[onk[int(choice)]]
+    if int(choice) == 5:
+        query.edit_message_text(
+            text="You have choosen cancel, \n /start to start bot again"
+        )
+        return ConversationHandler.END
+
+    global url
+    url = yt_url(title[onk[int(choice)]])
     print(url)
+    streamlink = "/" + str(uuid4())
+    app.add_url_rule(streamlink, "flask_streaming", flask_streaming)
     global song_url
-    song_url = yt_url(str(url))
+    song_url = "your host with port" + streamlink
+    print(song_url)
 
     query.edit_message_text(
         text="Selected title : {}\n reply 'confirm'   to confirm".format(
@@ -105,6 +130,7 @@ def button(update, context):
 
 def display_results(update, context):
     title = dict()
+
     update.message.reply_text(song_url)
     return ConversationHandler.END
 
@@ -115,10 +141,11 @@ def error(update, error):
 
 
 if __name__ == "__main__":
+
     t1 = Thread(target=start_flask)
     t1.start()
 
-    key = "add your api key here"
+    key = "your api key"
     updater = Updater(key, use_context=True)
     dp = updater.dispatcher
     conv_handler = ConversationHandler(
